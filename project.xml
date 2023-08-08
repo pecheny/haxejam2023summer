@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+    <set name="builds_folder" value="."/>
+   <set name="builds_folder" value="/AndroidBuilds" if="android"/>
+
+    <meta title="prj" package="com.shoo.prj" version="1.0.0" company="pecheny"/>
+    <app main="j2023.Main" path="${builds_folder}/Export" file="build"/>
+
+    <window antialiasing="4"/>
+    <window background="#204080" fps="60" width="640" height="960"/>
+    <!--    <window background="#303030" fps="60"  if="html5"/>-->
+    <source path="src"/>
+
+    <haxelib name="openfl"/>
+    <haxelib name="ginp"/>
+    <haxelib name="taxis"/>
+    <haxelib name="fancy"/>
+    <haxelib name="alayout"/>
+    <!-- <haxelib name="hxmath"/> -->
+
+    <haxedef name="openfl_disable_context_cache" value="true"/>
+    <haxedef name="openfl_always_render" value="true"/>
+<!--    <haxedef name="js-es" value="6"/>-->
+<!--    <haxedef name="openfl_pool_events" value="true"/>-->
+    <haxeflag name="-dce" value="full"/>
+    <haxeflag name="-D"  value="no-deprecation-warnings" />
+    <!-- <library path="Assets/art.swf" preload="true" generate="true"/> -->
+    <assets path="Assets" include="*"/>
+    <template path="templates" if="html5"/>
+</project>

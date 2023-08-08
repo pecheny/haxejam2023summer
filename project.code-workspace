@@ -1,0 +1,32 @@
+{
+	"folders": [
+        {
+            "path": "."
+        },
+        {
+            "path": "..\\..\\Devs\\openfl"
+        },
+        {
+            "path": "..\\..\\Devs\\lime"
+        },
+        {
+            "path": "..\\fancy"
+        }
+        ,
+        {
+            "path": "..\\taxis"
+        }
+        ,
+        {
+            "path": "..\\ginp"
+        }
+
+    ],
+    "settings": {
+        // "haxe.diagnosticsPathFilter": "${workspaceRoot}/src",
+        "git.detectSubmodules": false,
+        "git.autoRepositoryDetection": "openEditors",
+
+    "workbench.colorTheme": "Visual Studio Dark",
+    }
+}
