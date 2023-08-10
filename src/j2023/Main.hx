@@ -1,5 +1,8 @@
 package j2023;
 
+import j2023.PolyLineSystem.FigureRender;
+import openfl.Lib;
+import openfl.display.FPS;
 import update.Updater;
 import Axis2D;
 import FuiBuilder.XmlLayerLayouts;
@@ -31,6 +34,7 @@ class Main extends AbstractEngine {
 
     public function new() {
         super();
+        addChild(new FPS());
         var wnd = openfl.Lib.application.window;
         if (wnd.y < 0)
             wnd.y = 20;
@@ -128,9 +132,13 @@ class NextFloorGameState extends State implements ui.GameplayUIMock.GameMock {
         this.game.addUpdatable(pointer);
 
 
-        var game = new PolyLineSystem(new Sprite(), input, pointer.pointer);
-        spriteAdapter(w, game.canvas);
-        this.game.addUpdatable(game);
+        var poly = new PolyLineSystem(new Sprite(), input, pointer.pointer);
+        spriteAdapter(w, poly.canvas);
+        this.game.addUpdatable(poly);
+
+        var figures = new Sprite();
+        Lib.current.addChild(figures);
+        new FigureRender(figures, poly);
         initScreens();
     }
 

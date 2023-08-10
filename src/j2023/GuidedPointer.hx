@@ -22,9 +22,6 @@ class GuidedPointer implements Updatable {
     }
 
     public function update(dt:Float) {
-        Timer.measure(update1);
-    }
-    public function update1() {
         guidePrev.copyFrom(guide);
         var st = Lib.current.stage;
         guide.init(st.mouseX, st.mouseY);
