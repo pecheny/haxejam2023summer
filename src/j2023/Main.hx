@@ -51,7 +51,7 @@ class Main extends AbstractEngine {
         var machine = new StateMachine();
         rootEntity.addComponent(machine);
         machine.addState(new MetaGameState(Builder.widget(), rootEntity));
-        machine.addState(new NextFloorGameState(Builder.widget(), rootEntity));
+        machine.addState(new SplitGameState(Builder.widget(), rootEntity));
         machine.changeState(MetaGameState);
         addUpdatable(machine);
     }
@@ -95,7 +95,7 @@ class MetaGameState extends State {
 
     function startGame() {
         // () -> rootEntity.getComponent(WidgetSwitcher).switchTo(null)
-        root.getComponentUpward(StateMachine).changeState(NextFloorGameState);
+        root.getComponentUpward(StateMachine).changeState(SplitGameState);
     }
 
     function sty(name) {
@@ -104,7 +104,7 @@ class MetaGameState extends State {
     }
 }
 
-class NextFloorGameState extends State implements ui.GameplayUIMock.GameMock {
+class SplitGameState extends State implements ui.GameplayUIMock.GameMock {
     // var game:NextFloorGame;
     // var rend:NextFloorRender;
     var input:J23Input;
