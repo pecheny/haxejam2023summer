@@ -48,20 +48,25 @@ class DebugQuadRender extends ShapeWidget<TexSet> {
 }
 
 class Trapezoid<T:AttribSet> implements Shape {
-
     var locPointer = new Vec2D();
     var secFrom = new Vec2D(-0.1, -0.20);
-
+    var lastIntersection = new Vec2D();
     var writers:AttributeWriters;
     var uvWriters:AttributeWriters;
     var canvas = new FigureRender2();
+    var pathOrig:Array<Vec2D> = [];
+    var pathSplitted:Array<Vec2D> = [];
+    var indices = new IndexCollection(12);
 
     public function new(attrs:T) {
         Lib.current.addChild(canvas);
 
         writers = attrs.getWriter(AttribAliases.NAME_POSITION);
         uvWriters = attrs.getWriter(AttribAliases.NAME_UV_0);
-        updateShape();
+        pathOrig.push(new Vec2D(0, 0));
+        pathOrig.push(new Vec2D(1, 0));
+        pathOrig.push(new Vec2D(1, 1));
+        pathOrig.push(new Vec2D(0.0, 1.0));
     }
 
     public function setCrop(x, y) {
@@ -69,34 +74,9 @@ class Trapezoid<T:AttribSet> implements Shape {
         buildIntersectedPath(secFrom, locPointer);
     }
 
-    var f = false;
-    var pathOrig:Array<Vec2D> = [];
-    var pathSplitted:Array<Vec2D> = [];
-    var indices = new IndexCollection(12);
-
     public inline function getIndices():IndexCollection {
         return indices;
     }
-
-    function updateShape() {
-        if (f)
-            return;
-        f = true;
-
-        pathOrig.push(new Vec2D(0, 0));
-        pathOrig.push(new Vec2D(1, 0));
-        pathOrig.push(new Vec2D(1, 1));
-        pathOrig.push(new Vec2D(0.0, 1.0));
-
-        var ep = [];
-        for (p in pathOrig) {
-            ep.push(p.x);
-            ep.push(p.y);
-        }
-        var inds = Earcut.earcut(ep);
-    }
-
-    var lastIntersection = new Vec2D();
 
     function getLineIntersection(a1:Vec2DRO, a2:Vec2DRO, b1:Vec2DRO, b2:Vec2DRO) {
         return MathUtil.get_line_intersection(a1.x, a1.y, a2.x, a2.y, b1.x, b1.y, b2.x, b2.y, lastIntersection, false);
@@ -110,20 +90,19 @@ class Trapezoid<T:AttribSet> implements Shape {
         secator2.normalize(2);
         secator2.add(secator1);
         secator2.y = 1 - secator2.y;
-        for (i in 1...pathOrig.length) {
-            var p1 = pathOrig[i - 1];
-            var p2 = pathOrig[i];
+
+        function checkEdge(pi1, pi2) {
+            var p1 = pathOrig[pi1];
+            var p2 = pathOrig[pi2];
             if (getLineIntersection(p1, p2, secator1, secator2)) {
-                afterVert.push(i - 1);
+                afterVert.push(pi1);
                 intersections.push(lastIntersection.clone());
             }
         }
-        var p1 = pathOrig[pathOrig.length - 1];
-        var p2 = pathOrig[0];
-        if (getLineIntersection(p1, p2, secator1, secator2)) {
-            afterVert.push(pathOrig.length - 1);
-            intersections.push(lastIntersection.clone());
-        }
+        for (i in 1...pathOrig.length)
+            checkEdge(i - 1, i);
+        checkEdge(pathOrig.length - 1, 0);
+
         var newPath = [];
         var oinds = [];
         if (intersections.length < 1)
@@ -229,6 +208,7 @@ class FigureRender2 extends Sprite {
     public function setText(t) {
         tf.text = t;
     }
+
     public function render(figures:Array<Vec2D>) {
         var s = 300;
         graphics.clear();
