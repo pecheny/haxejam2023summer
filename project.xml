@@ -16,7 +16,6 @@
     <haxelib name="taxis"/>
     <haxelib name="fancy"/>
     <haxelib name="alayout"/>
-    <!-- <haxelib name="earcut"/> -->
     <haxelib name="hxGeomAlgo"/>
     
     <!-- <haxelib name="hxmath"/> -->
