@@ -69,8 +69,8 @@ class Trapezoid<T:AttribSet> implements Shape {
         pathOrig.push(new Vec2D(0.0, 1.0));
     }
 
-    public function setCrop(x, y) {
-        locPointer.init(x, y);
+    public function setCrop(x, y:Float) {
+        locPointer.init(x, 1 - y);
         buildIntersectedPath(secFrom, locPointer);
     }
 
@@ -85,11 +85,10 @@ class Trapezoid<T:AttribSet> implements Shape {
     function buildIntersectedPath(secator1:Vec2D, secator2:Vec2D) {
         var afterVert = [];
         var intersections = [];
-        secator1.init(1.1, 0.5);
+        secator1.init(0.5, 1.1);
         secator2.remove(secator1);
         secator2.normalize(2);
         secator2.add(secator1);
-        secator2.y = 1 - secator2.y;
 
         function checkEdge(pi1, pi2) {
             var p1 = pathOrig[pi1];
@@ -123,7 +122,7 @@ class Trapezoid<T:AttribSet> implements Shape {
             ep.push(p.y);
         }
         var inds = Earcut.earcut(ep);
-        canvas.setText("" + inds + "\n " + pathSplitted);
+        // canvas.setText("" + inds + "\n " + pathSplitted);
 
         for (i in 0...inds.length)
             indices[i] = inds[i];
