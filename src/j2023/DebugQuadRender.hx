@@ -1,5 +1,9 @@
 package j2023;
 
+import openfl.geom.Matrix;
+import openfl.Vector;
+import openfl.geom.Rectangle;
+import openfl.display.BitmapData;
 import Axis2D;
 import al.al2d.Placeholder2D;
 import data.IndexCollection.IndexCollections;
@@ -33,15 +37,61 @@ class DebugQuadRender extends ShapeWidget<TexSet> {
         super(TexSet.instance, w);
         var trap = new Trapezoid(attrs);
         addChild(trap);
-
-        var inp = new SplitInput(w, fuiBuilder.ar, trap.setCrop);
+        var aestimator = new AreaEstimator();
+        var inp = new SplitInput(w, fuiBuilder.ar, (x,y) ->{
+            trap.setCrop(x,y);
+            shapeRenderer.fillIndices();
+            aestimator.checkArea(trap.pathSplittedRaw, trap.indsRaw);
+        });
         w.entity.addComponentByType(InputSystemTarget, inp);
         new CtxWatcher(InputBinder, w.entity);
     }
 
-    override function render(targets:RenderTarget<TexSet>) {
-        shapeRenderer.fillIndices();
-        super.render(targets);
+}
+
+class AreaEstimator {
+    var bdata:BitmapData;
+    var refImg:BitmapData;
+    var canvas = new Sprite();
+    var rect = new Rectangle(0, 0, 256, 256);
+    var mat:Matrix;
+    var refCoverage:Float;
+
+    public function new() {
+        bdata = new BitmapData(256, 256, false, 0);
+        mat = new Matrix();
+        mat.scale(256,256);
+        refImg = Assets.getBitmapData("Assets/c-256.png");
+        Lib.current.addChild(new Bitmap(bdata));
+        // Lib.current.addChild(canvas);
+        refCoverage = getCoverage(refImg);
+    }
+
+    var inds:Vector<Int> = new Vector();
+    var verts:Vector<Float> = new Vector();
+
+    // var uv:Vector<Float> = new Vector();
+    function getCoverage(bdata:BitmapData) {
+        var hist = bdata.histogram()[2];
+        return hist[hist.length-1];
+    }
+
+    public function checkArea(v:Array<Float>, ind:Array<Int>) {
+        inds.length = 0;
+        for (i in ind)
+            inds.push(i);
+        verts.length = 0;
+        for (i in v)
+            verts.push(i);
+        canvas.graphics.clear();
+        canvas.graphics.beginBitmapFill(refImg);
+        canvas.graphics.drawTriangles(verts, inds, verts);
+        canvas.graphics.endFill();
+        canvas.scaleX = canvas.scaleY = 256;
+        bdata.fillRect(rect, 0);
+        bdata.draw(canvas, mat);
+        var cvr = getCoverage(bdata);
+        trace(cvr  + " " + refCoverage  + " " + (cvr/refCoverage));
     }
 }
 
@@ -54,6 +104,8 @@ class Trapezoid<T:AttribSet> implements Shape {
     var canvas = new FigureRender2();
     var pathOrig:Array<Vec2D> = [];
     var pathSplitted:Array<Vec2D> = [];
+    public var pathSplittedRaw:Array<Float> = [];
+    public var indsRaw:Array<Int>;
     var indices = new IndexCollection(12);
 
     public function new(attrs:T) {
@@ -112,17 +164,16 @@ class Trapezoid<T:AttribSet> implements Shape {
 
         canvas.render(pathSplitted);
 
-        // this.pathSplitted = pathSplitted;
-        var ep = [];
+        var ep = pathSplittedRaw;
+        ep.resize(0);
         for (p in pathSplitted) {
             ep.push(p.x);
             ep.push(p.y);
         }
-        var inds = Earcut.earcut(ep);
-        // canvas.setText("" + inds + "\n " + pathSplitted);
+        indsRaw = Earcut.earcut(ep);
 
-        for (i in 0...inds.length)
-            indices[i] = inds[i];
+        for (i in 0...indsRaw.length)
+            indices[i] = indsRaw[i];
     }
 
     public function writePostions(target:Bytes, vertOffset = 0, transformer) {
