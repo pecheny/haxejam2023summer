@@ -1,37 +1,34 @@
 package j2023;
 
-// import earcut.Earcut;
-import gl.RenderTarget;
-import hxGeomAlgo.EarCut as Earcut;
-import openfl.text.TextField;
-import utils.MathUtil;
-import utils.Data;
-import macros.AVConstructor;
-import data.IndexCollection;
-import haxe.io.Bytes;
-import haxe.ds.ReadOnlyArray;
-import data.IndexCollection.IndexCollections;
-import graphics.shapes.RectWeights;
 import Axis2D;
-import gl.ValueWriter;
-import gl.AttribSet;
-import graphics.shapes.Shape;
-import ecbind.InputBinder;
-import utils.Mathu;
-import ec.CtxWatcher;
-import widgets.utils.WidgetHitTester;
-import shimp.InputSystem.HitTester;
-import widgets.Slider.ToWidgetSpace;
-import shimp.InputSystem.InputSystemTarget;
-import openfl.display.Bitmap;
-import openfl.utils.Assets;
-import openfl.display.Sprite;
-import openfl.Lib;
-import graphics.shapes.QuadGraphicElement;
-import data.aliases.AttribAliases;
 import al.al2d.Placeholder2D;
+import data.IndexCollection.IndexCollections;
+import data.IndexCollection;
+import data.aliases.AttribAliases;
+// import earcut.Earcut;
+import ec.CtxWatcher;
+import ecbind.InputBinder;
+import gl.AttribSet;
+import gl.RenderTarget;
+import gl.ValueWriter;
 import gl.sets.TexSet;
+import graphics.shapes.Shape;
+import haxe.ds.ReadOnlyArray;
+import haxe.io.Bytes;
+import hxGeomAlgo.EarCut as Earcut;
+import macros.AVConstructor;
+import openfl.Lib;
+import openfl.display.Bitmap;
+import openfl.display.Sprite;
+import openfl.text.TextField;
+import openfl.utils.Assets;
+import shimp.InputSystem;
+import utils.Data;
+import utils.MathUtil;
+// import utils.Mathu;
 import widgets.ShapeWidget;
+import widgets.Slider.ToWidgetSpace;
+import widgets.utils.WidgetHitTester;
 
 class DebugQuadRender extends ShapeWidget<TexSet> {
     public function new(fuiBuilder:FuiBuilder, w:Placeholder2D, filename, createGldo = false) {
@@ -53,51 +50,30 @@ class DebugQuadRender extends ShapeWidget<TexSet> {
 }
 
 class Trapezoid<T:AttribSet> implements Shape {
-    public var weights:AVector2D<Array<Float>>;
-    public var mul:AVector2D<Float> = AVConstructor.create(1, 1);
 
     var locPointer = new Vec2D();
     var secFrom = new Vec2D(-0.1, -0.20);
+
     var writers:AttributeWriters;
     var uvWriters:AttributeWriters;
     var canvas = new FigureRender2();
 
     public function new(attrs:T) {
         Lib.current.addChild(canvas);
-        weights = RectWeights.identity();
-        // var writers:AttributeWriters;
+
         writers = attrs.getWriter(AttribAliases.NAME_POSITION);
         uvWriters = attrs.getWriter(AttribAliases.NAME_UV_0);
         updateShape();
     }
 
     public function setCrop(x, y) {
-        // trace("crop", x, y);
-        // mul[horizontal] = x;
-        // mul[vertical] = y;
-        // lineFromPoints(0.5, 0, x, y);
         locPointer.init(x, y);
         buildIntersectedPath(secFrom, locPointer);
     }
 
-    // var splittingLine = {a: .0, b: .0, c: .0};
-    // inline function lineFromPoints(x1:Float, y1:Float, x2:Float, y2:Float) {
-    //     var a = y1 - y2;
-    //     var b = x2 - x1;
-    //     var c = -a * x1 - b * y1;
-    //     splittingLine.a = a;
-    //     splittingLine.b = b;
-    //     splittingLine.c = c;
-    // }
-    // inline function getDistance(x:Float, y:Float) {
-    //     var l = splittingLine;
-    //     var d = (x * l.a + y * l.b + l.c);
-    //     return d;
-    // }
     var f = false;
     var pathOrig:Array<Vec2D> = [];
     var pathSplitted:Array<Vec2D> = [];
-
     var indices = new IndexCollection(12);
 
     public inline function getIndices():IndexCollection {
@@ -112,8 +88,7 @@ class Trapezoid<T:AttribSet> implements Shape {
         pathOrig.push(new Vec2D(0, 0));
         pathOrig.push(new Vec2D(1, 0));
         pathOrig.push(new Vec2D(1, 1));
-        pathOrig.push(new Vec2D(0.001, 0.9999));
-        // pathOrig.push(new Vec2D(0.0, 1.0));
+        pathOrig.push(new Vec2D(0.0, 1.0));
 
         var ep = [];
         for (p in pathOrig) {
@@ -121,9 +96,6 @@ class Trapezoid<T:AttribSet> implements Shape {
             ep.push(p.y);
         }
         var inds = Earcut.earcut(ep);
-        trace(inds);
-        // for (i in 0...inds.length)
-        //     indices[i] = inds[i];
     }
 
     var lastIntersection = new Vec2D();
@@ -156,8 +128,6 @@ class Trapezoid<T:AttribSet> implements Shape {
         }
         var newPath = [];
         var oinds = [];
-        // trace (afterVert);
-        // trace(intersections);
         if (intersections.length < 1)
             return;
         for (i in 0...afterVert[0] + 1)
@@ -166,11 +136,8 @@ class Trapezoid<T:AttribSet> implements Shape {
         newPath.push(intersections[1]);
         for (i in afterVert[1] + 1...pathOrig.length)
             newPath.push(pathOrig[i]);
-        // newPath.push(pathOrig[0]);
 
         canvas.render(newPath);
-
-        trace(newPath);
 
         pathSplitted = newPath;
         var ep = [];
@@ -188,26 +155,13 @@ class Trapezoid<T:AttribSet> implements Shape {
     public function writePostions(target:Bytes, vertOffset = 0, transformer) {
         var i = 0;
         function writePoint(x, y) {
-            trace("writing ", x, y);
             writers[horizontal].setValue(target, vertOffset + i, transformer(horizontal, x));
             writers[vertical].setValue(target, vertOffset + i, transformer(vertical, y));
             uvWriters[horizontal].setValue(target, vertOffset + i, x);
             uvWriters[vertical].setValue(target, vertOffset + i, y);
             i++;
         }
-        // var inds = [3, 4, 0];
-        // // var inds = [3, 4, 0, 0, 1, 2, 2, 3, 0];
-        // for (i in 0...inds.length)
-        //     indices[i] = inds[i];
-        // var pathSplitted = [
-        //     [0., 0],
-        //     [1., 0],
-        //     [1., 0.575221872316061],
-        //     [0.435374850993543, 0.999943480966065],
-        //     [0.001, 0.9999]
-        // ];
-        // for (p in pathSplitted)
-        //     writePoint(p[0], 1 - p[1]);
+
         for (p in pathSplitted)
             writePoint(p.x, 1 - p.y);
     }
@@ -235,9 +189,7 @@ class SplitInput implements InputSystemTarget<Point> {
         this.pos = pos;
         var x = toLocal.transformValue(horizontal, posVal(pos, horizontal));
         var y = toLocal.transformValue(vertical, posVal(pos, vertical));
-        // handler(Mathu.clamp(v, 0, 1));
-        trace(Mathu.clamp(x, 0, 1), Mathu.clamp(y, 0, 1));
-        handler(Mathu.clamp(x, 0, 1), Mathu.clamp(y, 0, 1));
+        handler(MathUtil.clamp(x, 0, 1), MathUtil.clamp(y, 0, 1));
     }
 
     inline function posVal(p:Point, a:Axis2D) {
@@ -279,25 +231,14 @@ class FigureRender2 extends Sprite {
     public function setText(t) {
         tf.text = t;
     }
-
-    // var canvas:Sprite;
-    // var model:PolySplittingModel;
-    // public function new(canvas:Sprite, model) {
-    //     this.canvas = canvas;
-    //     this.model = model;
-    //     model.onFigureSplitted.listen(render);
-    // }
     public function render(figures:Array<Vec2D>) {
         var s = 300;
         graphics.clear();
         var path = figures;
-        // for (fi in 0...figures.length) {
-        //     var path = figures[fi];
         graphics.lineStyle(1, 0xffffff);
         graphics.moveTo(100 + s * path[0].x, 100 + s * path[0].y);
         for (i in 1...path.length)
             graphics.lineTo(100 + s * path[i].x, 100 + s * path[i].y);
         graphics.lineTo(100 + s * path[0].x, 100 + s * path[0].y);
-        // }
     }
 }
