@@ -29,13 +29,11 @@ import widgets.Slider.ToWidgetSpace;
 import widgets.utils.WidgetHitTester;
 
 class DebugQuadRender extends ShapeWidget<TexSet> {
-    public function new(fuiBuilder:FuiBuilder, w:Placeholder2D, filename, createGldo = false) {
-        var attrs = TexSet.instance;
-        super(attrs, w);
-        // var shw = new ShapeWidget(attrs, w);
+    public function new(fuiBuilder:FuiBuilder, w:Placeholder2D, filename) {
+        super(TexSet.instance, w);
         var trap = new Trapezoid(attrs);
         addChild(trap);
-        var uvs = new graphics.DynamicAttributeAssigner(attrs, getBuffer());
+
         var inp = new SplitInput(w, fuiBuilder.ar, trap.setCrop);
         w.entity.addComponentByType(InputSystemTarget, inp);
         new CtxWatcher(InputBinder, w.entity);
@@ -102,20 +100,19 @@ class Trapezoid<T:AttribSet> implements Shape {
             checkEdge(i - 1, i);
         checkEdge(pathOrig.length - 1, 0);
 
-        var newPath = [];
-        var oinds = [];
+        pathSplitted.resize(0);
         if (intersections.length < 1)
             return;
         for (i in 0...afterVert[0] + 1)
-            newPath.push(pathOrig[i]);
-        newPath.push(intersections[0]);
-        newPath.push(intersections[1]);
+            pathSplitted.push(pathOrig[i]);
+        pathSplitted.push(intersections[0]);
+        pathSplitted.push(intersections[1]);
         for (i in afterVert[1] + 1...pathOrig.length)
-            newPath.push(pathOrig[i]);
+            pathSplitted.push(pathOrig[i]);
 
-        canvas.render(newPath);
+        canvas.render(pathSplitted);
 
-        pathSplitted = newPath;
+        // this.pathSplitted = pathSplitted;
         var ep = [];
         for (p in pathSplitted) {
             ep.push(p.x);
