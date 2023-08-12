@@ -1,5 +1,6 @@
 package j2023;
 
+import utils.MathUtil;
 import ec.Signal;
 import ginp.DefaultInput.OneButton;
 import states.States;
@@ -48,7 +49,7 @@ class PolyLineSystem implements Updatable extends StateMachine implements PolySp
     function figUnder() {
         for (i in 0...figures.length) {
             var poly = figures[i];
-            if (pnpoly(poly, pointer)) {
+            if (MathUtil.pnpoly(poly, pointer)) {
                 return i;
             }
         }
@@ -85,48 +86,13 @@ class PolyLineSystem implements Updatable extends StateMachine implements PolySp
     }
 
     function getLineIntersection(a1:Vec2DRO, a2:Vec2DRO, b1:Vec2DRO, b2:Vec2DRO) {
-        return get_line_intersection(a1.x, a1.y, a2.x, a2.y, b1.x, b1.y, b2.x, b2.y);
+        return MathUtil.get_line_intersection(a1.x, a1.y, a2.x, a2.y, b1.x, b1.y, b2.x, b2.y, lastIntersection);
     }
 
     var lastIntersection = new Vec2D();
     var intersectedIdx = -1;
 
-    // https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
-    function get_line_intersection(p0_x:Float, p0_y:Float, p1_x:Float, p1_y:Float, p2_x:Float, p2_y:Float, p3_x:Float, p3_y:Float) {
-        // var i_x:Float, i_y:Float;
-        var s1_x, s1_y, s2_x, s2_y;
-        s1_x = p1_x - p0_x;
-        s1_y = p1_y - p0_y;
-        s2_x = p3_x - p2_x;
-        s2_y = p3_y - p2_y;
-
-        var s, t;
-        s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / (-s2_x * s1_y + s1_x * s2_y);
-        t = (s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / (-s2_x * s1_y + s1_x * s2_y);
-
-        if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
-            // Collision detected
-            lastIntersection.x = p0_x + (t * s1_x);
-            lastIntersection.y = p0_y + (t * s1_y);
-            return true;
-        }
-        return false; // No collision
-    }
-
-    // https://stackoverflow.com/questions/217578/how-can-i-determine-whether-a-2d-point-is-within-a-polygon
-    function pnpoly(poly:Array<Vec2D>, test:Vec2DRO) {
-        var i = 0;
-        var c = false;
-        var j = poly.length - 1;
-        while (i < poly.length) {
-            if (((poly[i].y > test.y) != (poly[j].y > test.y))
-                && (test.x < (poly[j].x - poly[i].x) * (test.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x))
-                c = !c;
-
-            j = i++;
-        }
-        return c;
-    }
+   
 }
 
 @:access(j2023.PolyLineSystem)
@@ -177,8 +143,8 @@ class SplittingState extends State {
 
     override function onEnter() {
         if (!fsm.checkFigure(fsm.last, fsm.pointer)) {
-            trace(fsm.last + " " + fsm.pnpoly(fsm.figures[fsm.activeFigure], fsm.last));
-            trace(fsm.pointer + " " + fsm.pnpoly(fsm.figures[fsm.activeFigure], fsm.pointer));
+            trace(fsm.last + " " + MathUtil.pnpoly(fsm.figures[fsm.activeFigure], fsm.last));
+            trace(fsm.pointer + " " + MathUtil.pnpoly(fsm.figures[fsm.activeFigure], fsm.pointer));
             trace("wrong");
         }
         // throw "Wrong!";
@@ -195,7 +161,7 @@ class SplittingState extends State {
         var path = fsm.path;
         var last = path[path.length - 1];
         // if pointer outside and path < 2 - cancel
-        if (!fsm.pnpoly(fsm.figures[fsm.activeFigure], fsm.pointer)) {
+        if (!MathUtil.pnpoly(fsm.figures[fsm.activeFigure], fsm.pointer)) {
             if (path.length < 2)
                 fsm.changeState(IdleState);
             // cancel
