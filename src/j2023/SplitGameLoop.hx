@@ -1,11 +1,13 @@
 package j2023;
 
+import j2023.Main.GameOverState;
 import j2023.Main.SplitGameState;
 import states.States;
 import utils.MathUtil;
 import j2023.CircleWidget;
 
 class SplitGameLoop extends StateMachine {
+    public var metaGame:StateMachine;
     public var statusGui:StatusWidget;
     public var c1:CircleWidget;
     public var c2:CircleWidget;
@@ -30,7 +32,7 @@ class SplitGameLoop extends StateMachine {
     }
 
     public function gameOver() {
-        init();
+        metaGame.changeState(GameOverState);
     }
 
     public function setUserRatio(ratio:Float) {
@@ -55,6 +57,10 @@ class SplitGameLoop extends StateMachine {
         splitter.setAlpha(splitterAlpha);
         
     }
+}
+
+class IdleState extends SplitStateBase {
+    
 }
 
 class SplitStateBase extends State {

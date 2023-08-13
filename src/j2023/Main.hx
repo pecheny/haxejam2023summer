@@ -41,9 +41,8 @@ class Main extends AbstractEngine {
         renderingStuff();
         var drawcallsLayout = '<container>
         <drawcall type="color"/>
-        <drawcall type="text" font=""/>
         <drawcall type="circles" path="Assets/c-256.png" />
-        <drawcall type="image" path="Assets/c-256.png" />
+        <drawcall type="text" font=""/>
         </container>';
         rootEntity = fui.createDefaultRoot(drawcallsLayout);
         var flashCanvas = new Sprite();
@@ -56,8 +55,9 @@ class Main extends AbstractEngine {
         var machine = new StateMachine();
         rootEntity.addComponent(machine);
         machine.addState(new MetaGameState(Builder.widget(), rootEntity));
+        machine.addState(new GameOverState(Builder.widget(), rootEntity));
         machine.addState(new SplitGameState(Builder.widget(), rootEntity));
-        machine.changeState(SplitGameState);
+        machine.changeState(MetaGameState);
         addUpdatable(machine);
     }
 
@@ -76,30 +76,85 @@ class Main extends AbstractEngine {
     }
 }
 
-class MetaGameState extends State {
-    var w:Placeholder2D;
-    var root:Entity;
+class GameOverState extends StateBase {
+    public function new(w:Placeholder2D, root:Entity) {
+        super(w,root);
 
-    public function new(w, root) {
-        this.w = w;
-        this.root = root;
-        welcomeScreen(w);
+        var fui = root.getComponentUpward(FuiBuilder);
+        var b = fui.placeholderBuilder;
+        root.getComponent(FuiBuilder).makeClickInput(w);
+
+        var shViewSz = 0.33;
+
+
+        var stw = b.h(pfr, 1).v(sfr, 0.2).b().withLiquidTransform(fui.ar.getAspectRatio());
+
+        var splWdg = b.h(sfr, shViewSz)
+        .v(sfr, shViewSz)
+        .b()
+        .withLiquidTransform(fui.ar.getAspectRatio());
+
+        var bg = new CircleButton(splWdg,startGame, "go!", fui.s("fit") , fui);
+        // bg.setColor();
+
+
+        var refCrcles = Builder.createContainer(b.v(sfr, shViewSz).b(), horizontal, Align.Center).withChildren([]);
+
+        var splittingCrcle = Builder.createContainer(b.v(sfr, shViewSz).b(), horizontal, Align.Center).withChildren([splWdg]);
+        Builder.createContainer(w, vertical, Align.Center).withChildren([stw, refCrcles, splittingCrcle]);
+
     }
 
-    override function onEnter() {
-        var sw = root.getComponentUpward(WidgetSwitcher);
-        if (sw == null)
-            throw 'WThere is no WigetSwitcher';
-        sw.switchTo(w);
+
+    function welcomeScreen(w) {
+        var fui = root.getComponentUpward(FuiBuilder);
+        var b = fui.placeholderBuilder;
+        var pnl = Builder.createContainer(w, vertical, Align.Center).withChildren([
+            new Button(b.h(sfr, 1).v(px, 60).b().withLiquidTransform(fui.ar.getAspectRatio()), startGame, "Button caption", fui.s("fit")).widget(),
+        ]);
+        fui.makeClickInput(pnl);
+        return pnl;
     }
 
-    override function onExit() {
-        super.onExit();
-        var sw = root.getComponentUpward(WidgetSwitcher);
-        if (sw == null)
-            throw 'WThere is no WigetSwitcher';
-        sw.switchTo(null);
+    function startGame() {
+        // () -> rootEntity.getComponent(WidgetSwitcher).switchTo(null)
+        root.getComponentUpward(StateMachine).changeState(SplitGameState);
     }
+
+    function sty(name) {
+        var fui = root.getComponentUpward(FuiBuilder);
+        return fui.textStyles.getStyle(name);
+    }
+}
+class MetaGameState extends StateBase {
+    public function new(w:Placeholder2D, root:Entity) {
+        super(w,root);
+
+        var fui = root.getComponentUpward(FuiBuilder);
+        var b = fui.placeholderBuilder;
+        root.getComponent(FuiBuilder).makeClickInput(w);
+
+        var shViewSz = 0.33;
+
+
+        var stw = b.h(pfr, 1).v(sfr, 0.2).b().withLiquidTransform(fui.ar.getAspectRatio());
+
+        var splWdg = b.h(sfr, shViewSz)
+        .v(sfr, shViewSz)
+        .b()
+        .withLiquidTransform(fui.ar.getAspectRatio());
+
+        var bg = new CircleButton(splWdg,startGame, "go!", fui.s("fit") , fui);
+        // bg.setColor();
+
+
+        var refCrcles = Builder.createContainer(b.v(sfr, shViewSz).b(), horizontal, Align.Center).withChildren([]);
+
+        var splittingCrcle = Builder.createContainer(b.v(sfr, shViewSz).b(), horizontal, Align.Center).withChildren([splWdg]);
+        Builder.createContainer(w, vertical, Align.Center).withChildren([stw, refCrcles, splittingCrcle]);
+
+    }
+
 
     function welcomeScreen(w) {
         var fui = root.getComponentUpward(FuiBuilder);
@@ -122,39 +177,36 @@ class MetaGameState extends State {
     }
 }
 
-class SplitGameState extends State implements ui.GameplayUIMock.GameMock {
-    // var game:NextFloorGame;
-    // var rend:NextFloorRender;
+
+class SplitGameState extends StateBase implements ui.GameplayUIMock.GameMock {
     var input:J23Input;
-    var w:Placeholder2D;
-    var root:Entity;
     var switcher:WidgetSwitcher<Axis2D>;
     var gpScreen:Placeholder2D;
     var pauseScreen:Placeholder2D;
     var game:RealtimeUpdater;
-    // var game:FixedUpdater;
     var loop:SplitGameLoop;
+    var _pause = false;
 
     public function new(w:Placeholder2D, root:Entity) {
-        this.w = w;
-        this.root = root;
+        super(w,root);
 
         var fui = root.getComponentUpward(FuiBuilder);
         var b = fui.placeholderBuilder;
-        // this.game = new FixedUpdater();
         this.game = new RealtimeUpdater();
         switcher = new WidgetSwitcher(w);
         root.getComponent(FuiBuilder).makeClickInput(w);
         input = new J23Input();
+        initScreens();
 
         var shViewSz = 0.33;
-
 
         loop = new SplitGameLoop();
         game.addUpdatable(loop);
 
         var stw = b.h(pfr, 1).v(sfr, 0.2).b().withLiquidTransform(fui.ar.getAspectRatio());
         loop.statusGui = new StatusWidget(stw,fui.ar.getAspectRatio());
+        var fsm =root.getComponentUpward(StateMachine);
+        loop.metaGame = fsm;
 
         var refColor = 0x3090ff;
         var usrColor = 0xf51340;
@@ -187,37 +239,20 @@ class SplitGameState extends State implements ui.GameplayUIMock.GameMock {
 
         var splittingCrcle = Builder.createContainer(b.v(sfr, shViewSz).b(), horizontal, Align.Center).withChildren([loop.splitter.widget()]);
 
-        Builder.createContainer(w, vertical, Align.Center).withChildren([stw, refCrcles, splittingCrcle]);
+        Builder.createContainer(gpScreen, vertical, Align.Center).withChildren([stw, refCrcles, splittingCrcle]);
 
-        loop.changeState(SplittingGameState);
-        // game = new NextFloorGame(640, 960, input);
-        // rend = new NextFloorRender();
-        // rend.init(game.model);
-
-        // var pointer = new GuidedPointer();
-        // this.game.addUpdatable(pointer);
-
-        // var poly = new PolyLineSystem(new Sprite(), input, pointer.pointer);
-        // spriteAdapter(w, poly.canvas);
-        // this.game.addUpdatable(poly);
-
-        // var figures = new Sprite();
-        // Lib.current.addChild(figures);
-        // new FigureRender(figures, poly);
-        initScreens();
     }
 
     function initScreens() {
-        gpScreen = new GameplayScreen(Builder.widget(), root, this).widget();
+        gpScreen = Builder.widget(); //new GameplayScreen(, root, this).widget();
         pauseScreen = new GameplayPauseScreen(Builder.widget(), root, this).widget();
     }
 
     override function update(t:Float) {
-        // if (game.p)
-        //     return;
+        if(_pause)
+            return;
         input.beforeUpdate(t);
         game.update();
-        // rend.update(t);
         input.afterUpdate();
     }
 
@@ -225,12 +260,10 @@ class SplitGameState extends State implements ui.GameplayUIMock.GameMock {
         var dp = DrawcallDataProvider.get(w.entity);
         new CtxWatcher(FlashDisplayRoot, w.entity);
         dp.views.push(spr);
-        // var size = game.model.bounds.size;
-        // return new SpriteAspectKeeper(w, spr, new Boundbox(0, 0, size[horizontal], size[vertical]));
     }
 
     public function pause(v) {
-        // game.p = v;
+        _pause = v;
         if (v)
             switcher.switchTo(pauseScreen);
         else
@@ -238,11 +271,21 @@ class SplitGameState extends State implements ui.GameplayUIMock.GameMock {
     }
 
     override function onEnter() {
-        var sw = root.getComponentUpward(WidgetSwitcher);
-        if (sw == null)
-            throw 'WThere is no WigetSwitcher';
-        sw.switchTo(w);
+        super.onEnter();
         switcher.switchTo(gpScreen);
+        loop.init();
+        loop.changeState(SplittingGameState);
+    }
+
+}
+
+class StateBase extends State {
+
+    var w:Placeholder2D;
+    var root:Entity;
+    public function new(w:Placeholder2D, root:Entity) {
+        this.w = w;
+        this.root = root;
     }
 
     override function onExit() {
@@ -251,5 +294,12 @@ class SplitGameState extends State implements ui.GameplayUIMock.GameMock {
         if (sw == null)
             throw 'WThere is no WigetSwitcher';
         sw.switchTo(null);
+    }
+
+    override function onEnter() {
+        var sw = root.getComponentUpward(WidgetSwitcher);
+        if (sw == null)
+            throw 'WThere is no WigetSwitcher';
+        sw.switchTo(w);
     }
 }

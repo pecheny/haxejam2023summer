@@ -49,7 +49,7 @@ class CircleView<T:AttribSet> implements Shape {
     var offset:AVector2D<Float> = AVConstructor.create(0., 0.);
 
     public var weights:AVector2D<Array<Float>>;
-    public var r = 0.5;
+    public var r = 1.;
 
     public function setAreaCoef(s:Float) {
         r = 1 / Math.sqrt(1 / s);
