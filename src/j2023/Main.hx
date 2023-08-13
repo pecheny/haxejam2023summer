@@ -1,5 +1,9 @@
 package j2023;
 
+import gl.aspects.TextureBinder;
+import shaderbuilder.TextureFragment;
+import shaderbuilder.SnaderBuilder;
+import ColorTexSet;
 import Axis2D;
 import al.al2d.Placeholder2D;
 import al.core.Align;
@@ -33,10 +37,11 @@ class Main extends AbstractEngine {
         if (wnd.y < 0)
             wnd.y = 20;
         wnd.x = 800;
-
+        renderingStuff();
         var drawcallsLayout = '<container>
         <drawcall type="color"/>
         <drawcall type="text" font=""/>
+        <drawcall type="circles" path="Assets/c-256.png" />
         <drawcall type="image" path="Assets/c-256.png" />
         </container>';
         rootEntity = fui.createDefaultRoot(drawcallsLayout);
@@ -53,6 +58,20 @@ class Main extends AbstractEngine {
         machine.addState(new SplitGameState(Builder.widget(), rootEntity));
         machine.changeState(SplitGameState);
         addUpdatable(machine);
+    }
+
+    function renderingStuff() {
+        fui.regDrawcallType("circles", {
+            type: "circles",
+            attrs: ColorTexSet.instance,
+            vert: [Uv0Passthrough.instance, PosPassthrough.instance, ColorPassthroughVert.instance],
+            frag: [ColorTextureFragment.instance],
+        }, (e, xml) -> {
+            if (!xml.exists("path"))
+                throw '<image /> gldo should have path property';
+            //todo image name to gldo
+            return fui.createGldo(ColorTexSet.instance, e, "circles", new TextureBinder(fui.textureStorage, xml.get("path")), "");
+        });
     }
 }
 

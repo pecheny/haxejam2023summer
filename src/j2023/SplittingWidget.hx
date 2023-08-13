@@ -1,45 +1,41 @@
 package j2023;
 
-import graphics.shapes.RectWeights;
-import transform.Transformer;
-import openfl.geom.Matrix;
-import openfl.Vector;
-import openfl.geom.Rectangle;
-import openfl.display.BitmapData;
+import mesh.providers.AttrProviders.SolidColorProvider;
 import Axis2D;
 import al.al2d.Placeholder2D;
-import data.IndexCollection.IndexCollections;
 import data.IndexCollection;
 import data.aliases.AttribAliases;
 import ec.CtxWatcher;
 import ecbind.InputBinder;
 import gl.AttribSet;
-import gl.RenderTarget;
 import gl.ValueWriter;
-import gl.sets.TexSet;
+import ColorTexSet;
+import graphics.shapes.RectWeights;
 import graphics.shapes.Shape;
-import haxe.ds.ReadOnlyArray;
 import haxe.io.Bytes;
 import hxGeomAlgo.EarCut as Earcut;
-import macros.AVConstructor;
 import openfl.Lib;
-import openfl.display.Bitmap;
+import openfl.Vector;
+import openfl.display.BitmapData;
 import openfl.display.Sprite;
+import openfl.geom.Matrix;
+import openfl.geom.Rectangle;
 import openfl.text.TextField;
 import openfl.utils.Assets;
 import shimp.InputSystem;
+import transform.Transformer;
 import utils.Data;
 import utils.MathUtil;
 import widgets.ShapeWidget;
 import widgets.Slider.ToWidgetSpace;
 import widgets.utils.WidgetHitTester;
 
-class SplittingWidget extends ShapeWidget<TexSet> {
+class SplittingWidget extends ShapeWidget<ColorTexSet> {
     var aestimator = new AreaEstimator();
-    var trap:Trapezoid<TexSet>;
+    var trap:Trapezoid<ColorTexSet>;
 
     public function new(fuiBuilder:FuiBuilder, w:Placeholder2D, filename) {
-        super(TexSet.instance, w);
+        super(ColorTexSet.instance, w);
         trap = new Trapezoid(attrs);
         addChild(trap);
         var inp = new SplitInput(w, fuiBuilder.ar, (x, y) -> {
@@ -105,11 +101,11 @@ class AreaEstimator {
     }
 }
 
-class CircleWidget extends ShapeWidget<TexSet> {
-    var c:CircleView<TexSet>;
+class CircleWidget extends ShapeWidget<ColorTexSet> {
+    var c:CircleView<ColorTexSet>;
 
     public function new(fuiBuilder:FuiBuilder, w:Placeholder2D, filename) {
-        super(TexSet.instance, w);
+        super(ColorTexSet.instance, w);
         c = new CircleView(attrs);
         addChild(c);
     }
@@ -123,7 +119,9 @@ class CircleWidget extends ShapeWidget<TexSet> {
 
 class CircleView<T:AttribSet> implements Shape {
     var writers:AttributeWriters;
+    var colorWriters:AttributeWriters;
     var uvWriters:AttributeWriters;
+    var cp = SolidColorProvider.fromInt(0xf05034);
 
     public var weights:AVector2D<Array<Float>>;
     public var r = 0.5;
@@ -137,7 +135,9 @@ class CircleView<T:AttribSet> implements Shape {
     public function new(attrs:T) {
         weights = RectWeights.identity();
         writers = attrs.getWriter(AttribAliases.NAME_POSITION);
+        colorWriters = attrs.getWriter(AttribAliases.NAME_COLOR_IN);
         uvWriters = attrs.getWriter(AttribAliases.NAME_UV_0);
+        setColor(0xd54a04);
     }
 
     public function writePostions(target:Bytes, vertOffset:Int = 0, transformer:Transformer) {
@@ -151,11 +151,17 @@ class CircleView<T:AttribSet> implements Shape {
         for (i in 0...4) {
             writeAxis(horizontal, i);
             writeAxis(vertical, i);
+            for (ci in 0...4)
+                colorWriters[ci].setValue(target, vertOffset + i, cp.getValue(0, ci));
         }
     }
 
     public function getVertsCount():Int {
         return 4;
+    }
+
+    public function setColor(c:Int) {
+        cp.setColor(c).setAlpha(100);
     }
 
     public inline function getIndices():IndexCollection {
@@ -168,21 +174,23 @@ class Trapezoid<T:AttribSet> implements Shape {
     var secFrom = new Vec2D(-0.1, -0.20);
     var lastIntersection = new Vec2D();
     var writers:AttributeWriters;
+    var colorWriters :AttributeWriters;
     var uvWriters:AttributeWriters;
     var canvas = new FigureRender2();
     var pathOrig:Array<Vec2D> = [];
     var pathSplitted:Array<Vec2D> = [];
+    var cp = SolidColorProvider.fromInt(0xf05034);
 
     public var pathSplittedRaw:Array<Float> = [];
-    public var indsRaw:Array<Int>;
+    public var indsRaw:Array<Int> = [];
 
     var indices = new IndexCollection(12);
 
     public function new(attrs:T) {
         Lib.current.addChild(canvas);
-
         writers = attrs.getWriter(AttribAliases.NAME_POSITION);
         uvWriters = attrs.getWriter(AttribAliases.NAME_UV_0);
+        colorWriters = attrs.getWriter(AttribAliases.NAME_COLOR_IN);
         pathOrig.push(new Vec2D(0, 0));
         pathOrig.push(new Vec2D(1, 0));
         pathOrig.push(new Vec2D(1, 1));
@@ -253,11 +261,22 @@ class Trapezoid<T:AttribSet> implements Shape {
             writers[vertical].setValue(target, vertOffset + i, transformer(vertical, y));
             uvWriters[horizontal].setValue(target, vertOffset + i, x);
             uvWriters[vertical].setValue(target, vertOffset + i, y);
+            for (ci in 0...4)
+                colorWriters[ci].setValue(target, vertOffset + i, cp.getValue(0, ci));
             i++;
         }
 
-        for (p in pathSplitted)
-            writePoint(p.x, 1 - p.y);
+        for (i in 0...getVertsCount()) {
+            if (i < pathSplitted.length) {
+                var p = pathSplitted[i];
+                writePoint(p.x, 1 - p.y);
+            } else
+                writePoint(0, 0);
+        }
+    }
+
+    public function setColor(c:Int) {
+        cp.setColor(c).setAlpha(100);
     }
 
     public function getVertsCount():Int {
