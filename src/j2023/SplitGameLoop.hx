@@ -13,7 +13,7 @@ class SplitGameLoop extends StateMachine {
     public var c2r:CircleWidget;
     public var splitter:SplittingWidget;
     public var currentRatio:Float;
-    public var health:Float;
+    public var health(default, set):Float;
     public var score:Int;
 
     // public var reverseParts
@@ -21,6 +21,7 @@ class SplitGameLoop extends StateMachine {
         super();
         addState(new SplittingGameState(this));
         addState(new ResultPresentation(this));
+        init();
     }
 
     public function init() {
@@ -28,11 +29,25 @@ class SplitGameLoop extends StateMachine {
         score = 0;
     }
 
-    public function gameOver() {}
+    public function gameOver() {
+        init();
+    }
 
     public function setUserRatio(ratio:Float) {
         c1r.setAreaCoef(ratio);
         c2r.setAreaCoef(1 - ratio);
+    }
+
+    function set_health(value:Float):Float {
+        this.health = value;
+        if (statusGui != null)
+            statusGui.setHealth(value / 100);
+        return value;
+    }
+
+    public function setUserAlpha(a) {
+        c1r.setAlpha(a);
+        c2r.setAlpha(a);
     }
 }
 
@@ -47,19 +62,19 @@ class SplitStateBase extends State {
 }
 
 class SplittingGameState extends SplitStateBase {
-
     override function onEnter() {
         t = duration;
-        fsm.currentRatio = Math.random() * 0.7 + 0.15;
+        fsm.currentRatio = Math.random() * 0.9 + 0.05;
         fsm.c1.setAreaCoef(fsm.currentRatio);
         fsm.c2.setAreaCoef(1 - fsm.currentRatio);
         // generate challange
         // animate challange discovery
+        fsm.setUserAlpha(0);
     }
 
     override function update(dt:Float) {
         t -= dt;
-        fsm.statusGui.setProgress(t/duration);
+        fsm.statusGui.setProgress(t / duration);
         if (t <= 0) {
             var userRatio = fsm.splitter.getRatio();
             // if ((userRatio - 0.5)*(userRatio - 0.5) <0) {
@@ -70,6 +85,7 @@ class SplittingGameState extends SplitStateBase {
             var error:Float = Math.abs(userRatio - fsm.currentRatio) * 10;
             var deltaHealth = if (error < 0.1) 10 else -error;
             fsm.health = MathUtil.clamp(fsm.health + deltaHealth, 0, 100);
+
             if (fsm.health == 0)
                 fsm.gameOver();
             else
@@ -84,16 +100,16 @@ class SplittingGameState extends SplitStateBase {
 }
 
 class ResultPresentation extends SplitStateBase {
-
     override function onEnter() {
         t = duration;
         fsm.score++;
+        fsm.setUserAlpha(125);
     }
 
     override function update(dt:Float) {
-        t-=dt;
-        fsm.statusGui.setProgress(t/duration);
-        if (t<=0)
+        t -= dt;
+        // fsm.statusGui.setProgress(t / duration);
+        if (t <= 0)
             fsm.changeState(SplittingGameState);
     }
 }

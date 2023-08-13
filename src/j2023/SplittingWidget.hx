@@ -103,10 +103,13 @@ class AreaEstimator {
 
 class CircleWidget extends ShapeWidget<ColorTexSet> {
     var c:CircleView<ColorTexSet>;
+    var color:Int;
 
-    public function new(fuiBuilder:FuiBuilder, w:Placeholder2D, filename) {
+    public function new(fuiBuilder:FuiBuilder, w:Placeholder2D, color) {
         super(ColorTexSet.instance, w);
         c = new CircleView(attrs);
+        this.color = color;
+        c.setColor(color, 255);
         addChild(c);
     }
 
@@ -114,7 +117,9 @@ class CircleWidget extends ShapeWidget<ColorTexSet> {
         c.setAreaCoef(a);
     }
 
-    public function setAlpha(a:Float) {}
+    public function setAlpha(a:Int) {
+        c.setColor(color, a);
+    }
 }
 
 class CircleView<T:AttribSet> implements Shape {
@@ -137,7 +142,7 @@ class CircleView<T:AttribSet> implements Shape {
         writers = attrs.getWriter(AttribAliases.NAME_POSITION);
         colorWriters = attrs.getWriter(AttribAliases.NAME_COLOR_IN);
         uvWriters = attrs.getWriter(AttribAliases.NAME_UV_0);
-        setColor(0xd54a04);
+        setColor(0xd54a04, 100);
     }
 
     public function writePostions(target:Bytes, vertOffset:Int = 0, transformer:Transformer) {
@@ -160,8 +165,8 @@ class CircleView<T:AttribSet> implements Shape {
         return 4;
     }
 
-    public function setColor(c:Int) {
-        cp.setColor(c).setAlpha(100);
+    public function setColor(c:Int, a) {
+        cp.setColor(c).setAlpha(a);
     }
 
     public inline function getIndices():IndexCollection {
