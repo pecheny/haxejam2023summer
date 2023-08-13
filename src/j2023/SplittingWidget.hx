@@ -1,5 +1,6 @@
 package j2023;
 
+import macros.AVConstructor;
 import mesh.providers.AttrProviders.SolidColorProvider;
 import Axis2D;
 import al.al2d.Placeholder2D;
@@ -50,7 +51,11 @@ class SplittingWidget extends ShapeWidget<ColorTexSet> {
         return aestimator.checkArea(trap.pathSplittedRaw, trap.indsRaw);
     }
 
-    public function setFade(t:Float) {}
+    public function setAlpha(a:Int) {
+        trap.setAlpha(a);
+    }
+
+    // public function setFade(t:Float) {}
 }
 
 class AreaEstimator {
@@ -120,6 +125,10 @@ class CircleWidget extends ShapeWidget<ColorTexSet> {
     public function setAlpha(a:Int) {
         c.setColor(color, a);
     }
+
+    public function setOffset(o) {
+        c.setOffset(o);
+    }
 }
 
 class CircleView<T:AttribSet> implements Shape {
@@ -127,6 +136,7 @@ class CircleView<T:AttribSet> implements Shape {
     var colorWriters:AttributeWriters;
     var uvWriters:AttributeWriters;
     var cp = SolidColorProvider.fromInt(0xf05034);
+    var offset:AVector2D<Float> = AVConstructor.create(0., 0.);
 
     public var weights:AVector2D<Array<Float>>;
     public var r = 0.5;
@@ -150,7 +160,7 @@ class CircleView<T:AttribSet> implements Shape {
         var padding = (1 - scale) / 2;
         inline function writeAxis(axis:Axis2D, i) {
             var wg = weights[axis][i];
-            writers[axis].setValue(target, vertOffset + i, transformer(axis, padding + scale * wg));
+            writers[axis].setValue(target, vertOffset + i, transformer(axis, offset[axis] + padding + scale * wg));
             uvWriters[axis].setValue(target, vertOffset + i, wg);
         }
         for (i in 0...4) {
@@ -159,6 +169,10 @@ class CircleView<T:AttribSet> implements Shape {
             for (ci in 0...4)
                 colorWriters[ci].setValue(target, vertOffset + i, cp.getValue(0, ci));
         }
+    }
+
+    public function setOffset(o) {
+        offset[vertical] = o;
     }
 
     public function getVertsCount():Int {
@@ -290,7 +304,11 @@ class Trapezoid<T:AttribSet> implements Shape {
     }
 
     public function setColor(c:Int) {
-        cp.setColor(c).setAlpha(100);
+        cp.setColor(c);
+    }
+
+    public function setAlpha(a:Int) {
+        cp.setAlpha(a);
     }
 
     public function getVertsCount():Int {

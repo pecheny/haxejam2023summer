@@ -45,15 +45,21 @@ class SplitGameLoop extends StateMachine {
         return value;
     }
 
-    public function setUserAlpha(a) {
-        c1r.setAlpha(a);
-        c2r.setAlpha(a);
+    public function fade(a:Float) {
+        var usrAlpha = Std.int(a * 255);
+        var splitterAlpha = Std.int((1-a) * 255);
+        c1r.setAlpha(usrAlpha);
+        c1r.setOffset(1-a);
+        c2r.setAlpha(usrAlpha);
+        c2r.setOffset(1-a);
+        splitter.setAlpha(splitterAlpha);
+        
     }
 }
 
 class SplitStateBase extends State {
     var t:Float;
-    var duration = 2.;
+    var duration = 1.;
     var fsm:SplitGameLoop;
 
     public function new(fsm) {
@@ -64,12 +70,12 @@ class SplitStateBase extends State {
 class SplittingGameState extends SplitStateBase {
     override function onEnter() {
         t = duration;
+        fsm.fade(0);
         fsm.currentRatio = Math.random() * 0.9 + 0.05;
         fsm.c1.setAreaCoef(fsm.currentRatio);
         fsm.c2.setAreaCoef(1 - fsm.currentRatio);
         // generate challange
         // animate challange discovery
-        fsm.setUserAlpha(0);
     }
 
     override function update(dt:Float) {
@@ -83,7 +89,7 @@ class SplittingGameState extends SplitStateBase {
 
             fsm.setUserRatio(userRatio);
             var error:Float = Math.abs(userRatio - fsm.currentRatio) * 10;
-            var deltaHealth = if (error < 0.1) 10 else -error;
+            var deltaHealth = if (error < 0.1) 10 else -error * 10;
             fsm.health = MathUtil.clamp(fsm.health + deltaHealth, 0, 100);
 
             if (fsm.health == 0)
@@ -103,11 +109,12 @@ class ResultPresentation extends SplitStateBase {
     override function onEnter() {
         t = duration;
         fsm.score++;
-        fsm.setUserAlpha(125);
     }
 
     override function update(dt:Float) {
         t -= dt;
+        var tp = (t/duration);
+        fsm.fade(1-tp*tp);
         // fsm.statusGui.setProgress(t / duration);
         if (t <= 0)
             fsm.changeState(SplittingGameState);
