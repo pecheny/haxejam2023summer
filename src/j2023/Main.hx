@@ -1,5 +1,6 @@
 package j2023;
 
+import update.RealtimeUpdater;
 import gl.aspects.TextureBinder;
 import shaderbuilder.TextureFragment;
 import shaderbuilder.SnaderBuilder;
@@ -130,7 +131,8 @@ class SplitGameState extends State implements ui.GameplayUIMock.GameMock {
     var switcher:WidgetSwitcher<Axis2D>;
     var gpScreen:Placeholder2D;
     var pauseScreen:Placeholder2D;
-    var game:FixedUpdater;
+    var game:RealtimeUpdater;
+    // var game:FixedUpdater;
     var loop:SplitGameLoop;
 
     public function new(w:Placeholder2D, root:Entity) {
@@ -139,7 +141,8 @@ class SplitGameState extends State implements ui.GameplayUIMock.GameMock {
 
         var fui = root.getComponentUpward(FuiBuilder);
         var b = fui.placeholderBuilder;
-        this.game = new FixedUpdater();
+        // this.game = new FixedUpdater();
+        this.game = new RealtimeUpdater();
         switcher = new WidgetSwitcher(w);
         root.getComponent(FuiBuilder).makeClickInput(w);
         input = new J23Input();
