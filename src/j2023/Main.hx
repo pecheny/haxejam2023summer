@@ -204,7 +204,7 @@ class SplitGameState extends StateBase implements ui.GameplayUIMock.GameMock {
         game.addUpdatable(loop);
 
         var stw = b.h(pfr, 1).v(sfr, 0.2).b().withLiquidTransform(fui.ar.getAspectRatio());
-        loop.statusGui = new StatusWidget(stw,fui.ar.getAspectRatio());
+        loop.statusGui = new StatusWidget(stw,fui.ar.getAspectRatio(), fui);
         var fsm =root.getComponentUpward(StateMachine);
         loop.metaGame = fsm;
 
