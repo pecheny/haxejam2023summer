@@ -1,5 +1,7 @@
 package j2023;
 
+import graphics.shapes.RectWeights;
+import transform.Transformer;
 import openfl.geom.Matrix;
 import openfl.Vector;
 import openfl.geom.Rectangle;
@@ -32,21 +34,27 @@ import widgets.ShapeWidget;
 import widgets.Slider.ToWidgetSpace;
 import widgets.utils.WidgetHitTester;
 
-class DebugQuadRender extends ShapeWidget<TexSet> {
+class SplittingWidget extends ShapeWidget<TexSet> {
+    var aestimator = new AreaEstimator();
+    var trap:Trapezoid<TexSet>;
+
     public function new(fuiBuilder:FuiBuilder, w:Placeholder2D, filename) {
         super(TexSet.instance, w);
-        var trap = new Trapezoid(attrs);
+        trap = new Trapezoid(attrs);
         addChild(trap);
-        var aestimator = new AreaEstimator();
-        var inp = new SplitInput(w, fuiBuilder.ar, (x,y) ->{
-            trap.setCrop(x,y);
+        var inp = new SplitInput(w, fuiBuilder.ar, (x, y) -> {
+            trap.setCrop(x, y);
             shapeRenderer.fillIndices();
-            aestimator.checkArea(trap.pathSplittedRaw, trap.indsRaw);
         });
         w.entity.addComponentByType(InputSystemTarget, inp);
         new CtxWatcher(InputBinder, w.entity);
     }
 
+    public function getRatio():Float {
+        return aestimator.checkArea(trap.pathSplittedRaw, trap.indsRaw);
+    }
+
+    public function setFade(t:Float) {}
 }
 
 class AreaEstimator {
@@ -60,9 +68,9 @@ class AreaEstimator {
     public function new() {
         bdata = new BitmapData(256, 256, false, 0);
         mat = new Matrix();
-        mat.scale(256,256);
+        mat.scale(256, 256);
         refImg = Assets.getBitmapData("Assets/c-256.png");
-        Lib.current.addChild(new Bitmap(bdata));
+        // Lib.current.addChild(new Bitmap(bdata));
         // Lib.current.addChild(canvas);
         refCoverage = getCoverage(refImg);
     }
@@ -73,7 +81,7 @@ class AreaEstimator {
     // var uv:Vector<Float> = new Vector();
     function getCoverage(bdata:BitmapData) {
         var hist = bdata.histogram()[2];
-        return hist[hist.length-1];
+        return hist[hist.length - 1];
     }
 
     public function checkArea(v:Array<Float>, ind:Array<Int>) {
@@ -91,7 +99,67 @@ class AreaEstimator {
         bdata.fillRect(rect, 0);
         bdata.draw(canvas, mat);
         var cvr = getCoverage(bdata);
-        trace(cvr  + " " + refCoverage  + " " + (cvr/refCoverage));
+        var ratio = (cvr / refCoverage);
+        trace(cvr + " " + refCoverage + " " + ratio);
+        return ratio;
+    }
+}
+
+class CircleWidget extends ShapeWidget<TexSet> {
+    var c:CircleView<TexSet>;
+
+    public function new(fuiBuilder:FuiBuilder, w:Placeholder2D, filename) {
+        super(TexSet.instance, w);
+        c = new CircleView(attrs);
+        addChild(c);
+    }
+
+    public function setAreaCoef(a:Float) {
+        c.setAreaCoef(a);
+    }
+
+    public function setAlpha(a:Float) {}
+}
+
+class CircleView<T:AttribSet> implements Shape {
+    var writers:AttributeWriters;
+    var uvWriters:AttributeWriters;
+
+    public var weights:AVector2D<Array<Float>>;
+    public var r = 0.5;
+
+    public function setAreaCoef(s:Float) {
+        r = 1 / Math.sqrt(1 / s);
+        trace(r);
+        // r = Math.sqrt(2*s/Math.PI);
+    }
+
+    public function new(attrs:T) {
+        weights = RectWeights.identity();
+        writers = attrs.getWriter(AttribAliases.NAME_POSITION);
+        uvWriters = attrs.getWriter(AttribAliases.NAME_UV_0);
+    }
+
+    public function writePostions(target:Bytes, vertOffset:Int = 0, transformer:Transformer) {
+        var scale = r; //*2;
+        var padding = (1 - scale) / 2;
+        inline function writeAxis(axis:Axis2D, i) {
+            var wg = weights[axis][i];
+            writers[axis].setValue(target, vertOffset + i, transformer(axis, padding + scale * wg));
+            uvWriters[axis].setValue(target, vertOffset + i, wg);
+        }
+        for (i in 0...4) {
+            writeAxis(horizontal, i);
+            writeAxis(vertical, i);
+        }
+    }
+
+    public function getVertsCount():Int {
+        return 4;
+    }
+
+    public inline function getIndices():IndexCollection {
+        return IndexCollections.QUAD_ODD;
     }
 }
 
@@ -104,8 +172,10 @@ class Trapezoid<T:AttribSet> implements Shape {
     var canvas = new FigureRender2();
     var pathOrig:Array<Vec2D> = [];
     var pathSplitted:Array<Vec2D> = [];
+
     public var pathSplittedRaw:Array<Float> = [];
     public var indsRaw:Array<Int>;
+
     var indices = new IndexCollection(12);
 
     public function new(attrs:T) {

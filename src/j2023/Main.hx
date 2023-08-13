@@ -1,12 +1,6 @@
 package j2023;
 
-import j2023.PolyLineSystem.FigureRender;
-import openfl.Lib;
-import openfl.display.FPS;
-import update.Updater;
 import Axis2D;
-import FuiBuilder.XmlLayerLayouts;
-import a2d.Boundbox;
 import al.al2d.Placeholder2D;
 import al.core.Align;
 import al.ec.WidgetSwitcher;
@@ -14,12 +8,12 @@ import al.openfl.display.DrawcallDataProvider;
 import al.openfl.display.FlashDisplayRoot;
 import ec.CtxWatcher;
 import ec.Entity;
-import openfl.SpriteAspectKeeper;
+import j2023.SplitGameLoop;
+import j2023.SplittingWidget;
 import openfl.display.Sprite;
 import states.States;
 import ui.GameplayUIMock;
 import update.FixedUpdater;
-import update.Updatable;
 import utils.AbstractEngine;
 import widgets.Button;
 
@@ -118,6 +112,7 @@ class SplitGameState extends State implements ui.GameplayUIMock.GameMock {
     var gpScreen:Placeholder2D;
     var pauseScreen:Placeholder2D;
     var game:FixedUpdater;
+    var loop:SplitGameLoop;
 
     public function new(w:Placeholder2D, root:Entity) {
         this.w = w;
@@ -125,28 +120,42 @@ class SplitGameState extends State implements ui.GameplayUIMock.GameMock {
 
         var fui = root.getComponentUpward(FuiBuilder);
         var b = fui.placeholderBuilder;
-        var shViewSz = 0.33;
-        var refCrcles = Builder.createContainer(b.v(sfr, shViewSz).b(), horizontal, Align.Center).withChildren([
-            new Button(b.h(sfr, shViewSz)
-                .v(sfr, shViewSz)
-                .b()
-                .withLiquidTransform(fui.ar.getAspectRatio()), null, "O", fui.s("fit")).widget(),
-            new Button(b.h(sfr, shViewSz)
-                .v(sfr, shViewSz)
-                .b()
-                .withLiquidTransform(fui.ar.getAspectRatio()), null, "O", fui.s("fit")).widget(),
-        ]);
-
-        var splittingCrcle = Builder.createContainer(b.v(sfr, shViewSz).b(), horizontal, Align.Center).withChildren([
-            // new Button(b.h(sfr, shViewSz) .v(sfr, shViewSz) .b() .withLiquidTransform(fui.ar.getAspectRatio()), null, "O", fui.s("fit")).widget(),
-            new DebugQuadRender(fui, b.h(sfr, shViewSz).v(sfr, shViewSz).b().withLiquidTransform(fui.ar.getAspectRatio()), "c-256.png").widget()
-        ]);
-        var pnl = Builder.createContainer(w, vertical, Align.Center).withChildren([refCrcles, splittingCrcle]);
-
         this.game = new FixedUpdater();
         switcher = new WidgetSwitcher(w);
         root.getComponent(FuiBuilder).makeClickInput(w);
         input = new J23Input();
+
+        var shViewSz = 0.33;
+        loop = new SplitGameLoop();
+        game.addUpdatable(loop);
+
+        var lw = b.h(sfr, shViewSz)
+            .v(sfr, shViewSz)
+            .b()
+            .withLiquidTransform(fui.ar.getAspectRatio());
+        loop.c1 = new CircleWidget(fui, lw, "c-256.png");
+        loop.c1.setAreaCoef(1);
+        loop.c1r = new CircleWidget(fui, lw, "c-256.png");
+
+        var rw = b.h(sfr, shViewSz)
+            .v(sfr, shViewSz)
+            .b()
+            .withLiquidTransform(fui.ar.getAspectRatio());
+        loop.c2 = new CircleWidget(fui, rw, "c-256.png");
+        loop.c2r = new CircleWidget(fui, rw, "c-256.png");
+
+        loop.splitter = new SplittingWidget(fui, b.h(sfr, shViewSz)
+            .v(sfr, shViewSz)
+            .b()
+            .withLiquidTransform(fui.ar.getAspectRatio()), "c-256.png");
+
+        var refCrcles = Builder.createContainer(b.v(sfr, shViewSz).b(), horizontal, Align.Center).withChildren([lw, rw]);
+
+        var splittingCrcle = Builder.createContainer(b.v(sfr, shViewSz).b(), horizontal, Align.Center).withChildren([loop.splitter.widget()]);
+
+         Builder.createContainer(w, vertical, Align.Center).withChildren([refCrcles, splittingCrcle]);
+
+        loop.changeState(SplittingGameState);
         // game = new NextFloorGame(640, 960, input);
         // rend = new NextFloorRender();
         // rend.init(game.model);
