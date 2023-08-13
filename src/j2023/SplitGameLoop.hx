@@ -6,6 +6,7 @@ import utils.MathUtil;
 import j2023.SplittingWidget.CircleWidget;
 
 class SplitGameLoop extends StateMachine {
+    public var statusGui:StatusWidget;
     public var c1:CircleWidget;
     public var c2:CircleWidget;
     public var c1r:CircleWidget;
@@ -58,6 +59,7 @@ class SplittingGameState extends SplitStateBase {
 
     override function update(dt:Float) {
         t -= dt;
+        fsm.statusGui.setProgress(t/duration);
         if (t <= 0) {
             var userRatio = fsm.splitter.getRatio();
             // if ((userRatio - 0.5)*(userRatio - 0.5) <0) {
@@ -90,6 +92,7 @@ class ResultPresentation extends SplitStateBase {
 
     override function update(dt:Float) {
         t-=dt;
+        fsm.statusGui.setProgress(t/duration);
         if (t<=0)
             fsm.changeState(SplittingGameState);
     }

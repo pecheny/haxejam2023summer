@@ -69,7 +69,7 @@ class Main extends AbstractEngine {
         }, (e, xml) -> {
             if (!xml.exists("path"))
                 throw '<image /> gldo should have path property';
-            //todo image name to gldo
+            // todo image name to gldo
             return fui.createGldo(ColorTexSet.instance, e, "circles", new TextureBinder(fui.textureStorage, xml.get("path")), "");
         });
     }
@@ -145,8 +145,13 @@ class SplitGameState extends State implements ui.GameplayUIMock.GameMock {
         input = new J23Input();
 
         var shViewSz = 0.33;
+
+
         loop = new SplitGameLoop();
         game.addUpdatable(loop);
+
+        var stw = b.h(pfr, 1).v(sfr, 0.2).b().withLiquidTransform(fui.ar.getAspectRatio());
+        loop.statusGui = new StatusWidget(stw);
 
         var lw = b.h(sfr, shViewSz)
             .v(sfr, shViewSz)
@@ -168,11 +173,12 @@ class SplitGameState extends State implements ui.GameplayUIMock.GameMock {
             .b()
             .withLiquidTransform(fui.ar.getAspectRatio()), "c-256.png");
 
+
         var refCrcles = Builder.createContainer(b.v(sfr, shViewSz).b(), horizontal, Align.Center).withChildren([lw, rw]);
 
         var splittingCrcle = Builder.createContainer(b.v(sfr, shViewSz).b(), horizontal, Align.Center).withChildren([loop.splitter.widget()]);
 
-         Builder.createContainer(w, vertical, Align.Center).withChildren([refCrcles, splittingCrcle]);
+        Builder.createContainer(w, vertical, Align.Center).withChildren([stw, refCrcles, splittingCrcle]);
 
         loop.changeState(SplittingGameState);
         // game = new NextFloorGame(640, 960, input);
