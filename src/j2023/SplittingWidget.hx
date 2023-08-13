@@ -179,7 +179,7 @@ class Trapezoid<T:AttribSet> implements Shape {
     var secFrom = new Vec2D(-0.1, -0.20);
     var lastIntersection = new Vec2D();
     var writers:AttributeWriters;
-    var colorWriters :AttributeWriters;
+    var colorWriters:AttributeWriters;
     var uvWriters:AttributeWriters;
     var canvas = new FigureRender2();
     var pathOrig:Array<Vec2D> = [];
@@ -238,14 +238,23 @@ class Trapezoid<T:AttribSet> implements Shape {
         pathSplitted.resize(0);
         if (intersections.length < 1)
             return;
-        for (i in 0...afterVert[0] + 1)
-            pathSplitted.push(pathOrig[i]);
-        pathSplitted.push(intersections[0]);
-        pathSplitted.push(intersections[1]);
-        for (i in afterVert[1] + 1...pathOrig.length)
-            pathSplitted.push(pathOrig[i]);
+
+        if (afterVert[0] < 2) {
+            for (i in 0...afterVert[0] + 1)
+                pathSplitted.push(pathOrig[i]);
+            pathSplitted.push(intersections[0]);
+            pathSplitted.push(intersections[1]);
+            for (i in afterVert[1] + 1...pathOrig.length)
+                pathSplitted.push(pathOrig[i]);
+        } else {
+            for (i in afterVert[0] + 1...afterVert[1] + 1)
+                pathSplitted.push(pathOrig[i]);
+            pathSplitted.push(intersections[1]);
+            pathSplitted.push(intersections[0]);
+        }
 
         canvas.render(pathSplitted);
+        canvas.setText("" + afterVert);
 
         var ep = pathSplittedRaw;
         ep.resize(0);
