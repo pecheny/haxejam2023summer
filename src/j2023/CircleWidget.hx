@@ -1,35 +1,19 @@
 package j2023;
 
-import macros.AVConstructor;
-import mesh.providers.AttrProviders.SolidColorProvider;
 import Axis2D;
+import ColorTexSet;
 import al.al2d.Placeholder2D;
 import data.IndexCollection;
 import data.aliases.AttribAliases;
-import ec.CtxWatcher;
-import ecbind.InputBinder;
 import gl.AttribSet;
 import gl.ValueWriter;
-import ColorTexSet;
 import graphics.shapes.RectWeights;
 import graphics.shapes.Shape;
 import haxe.io.Bytes;
-import hxGeomAlgo.EarCut as Earcut;
-import openfl.Lib;
-import openfl.Vector;
-import openfl.display.BitmapData;
-import openfl.display.Sprite;
-import openfl.geom.Matrix;
-import openfl.geom.Rectangle;
-import openfl.text.TextField;
-import openfl.utils.Assets;
-import shimp.InputSystem;
+import macros.AVConstructor;
+import mesh.providers.AttrProviders.SolidColorProvider;
 import transform.Transformer;
-import utils.Data;
-import utils.MathUtil;
 import widgets.ShapeWidget;
-import widgets.Slider.ToWidgetSpace;
-import widgets.utils.WidgetHitTester;
 
 
 class CircleWidget extends ShapeWidget<ColorTexSet> {
@@ -69,7 +53,6 @@ class CircleView<T:AttribSet> implements Shape {
 
     public function setAreaCoef(s:Float) {
         r = 1 / Math.sqrt(1 / s);
-        trace(r);
         // r = Math.sqrt(2*s/Math.PI);
     }
 

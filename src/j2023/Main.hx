@@ -173,10 +173,14 @@ class SplitGameState extends State implements ui.GameplayUIMock.GameMock {
         loop.c2 = new CircleWidget(fui, rw, refColor);
         loop.c2r = new CircleWidget(fui, rw, usrColor);
 
-        loop.splitter = new SplittingWidget(fui, b.h(sfr, shViewSz)
-            .v(sfr, shViewSz)
-            .b()
-            .withLiquidTransform(fui.ar.getAspectRatio()), "c-256.png");
+        var splWdg = b.h(sfr, shViewSz)
+        .v(sfr, shViewSz)
+        .b()
+        .withLiquidTransform(fui.ar.getAspectRatio());
+
+        var bg = new CircleWidget(fui, splWdg, 0x404040);
+        bg.setAreaCoef(1);
+        loop.splitter = new SplittingWidget(fui, splWdg, "c-256.png");
 
 
         var refCrcles = Builder.createContainer(b.v(sfr, shViewSz).b(), horizontal, Align.Center).withChildren([lw, rw]);

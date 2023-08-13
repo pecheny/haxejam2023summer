@@ -1,8 +1,7 @@
 package j2023;
 
-import macros.AVConstructor;
-import mesh.providers.AttrProviders.SolidColorProvider;
 import Axis2D;
+import ColorTexSet;
 import al.al2d.Placeholder2D;
 import data.IndexCollection;
 import data.aliases.AttribAliases;
@@ -10,21 +9,18 @@ import ec.CtxWatcher;
 import ecbind.InputBinder;
 import gl.AttribSet;
 import gl.ValueWriter;
-import ColorTexSet;
-import graphics.shapes.RectWeights;
 import graphics.shapes.Shape;
 import haxe.io.Bytes;
 import hxGeomAlgo.EarCut as Earcut;
+import mesh.providers.AttrProviders.SolidColorProvider;
 import openfl.Lib;
 import openfl.Vector;
 import openfl.display.BitmapData;
 import openfl.display.Sprite;
 import openfl.geom.Matrix;
 import openfl.geom.Rectangle;
-import openfl.text.TextField;
 import openfl.utils.Assets;
 import shimp.InputSystem;
-import transform.Transformer;
 import utils.Data;
 import utils.MathUtil;
 import widgets.ShapeWidget;
@@ -40,6 +36,8 @@ class SplittingWidget extends ShapeWidget<ColorTexSet> {
         trap = new Trapezoid(attrs);
         addChild(trap);
         var inp = new SplitInput(w, fuiBuilder.ar, (x, y) -> {
+            if(trap.alpha < 255)
+                return;
             trap.setCrop(x, y);
             shapeRenderer.fillIndices();
         });
@@ -101,7 +99,7 @@ class AreaEstimator {
         bdata.draw(canvas, mat);
         var cvr = getCoverage(bdata);
         var ratio = (cvr / refCoverage);
-        trace(cvr + " " + refCoverage + " " + ratio);
+        // trace(cvr + " " + refCoverage + " " + ratio);
         return ratio;
     }
 }
@@ -114,7 +112,7 @@ class Trapezoid<T:AttribSet> implements Shape {
     var writers:AttributeWriters;
     var colorWriters:AttributeWriters;
     var uvWriters:AttributeWriters;
-    var canvas = new FigureRender2();
+    // var canvas = new FigureRender2();
     var pathOrig:Array<Vec2D> = [];
     var pathSplitted:Array<Vec2D> = [];
     var cp = SolidColorProvider.fromInt(0xf05034);
@@ -125,7 +123,7 @@ class Trapezoid<T:AttribSet> implements Shape {
     var indices = new IndexCollection(12);
 
     public function new(attrs:T) {
-        Lib.current.addChild(canvas);
+        // Lib.current.addChild(canvas);
         writers = attrs.getWriter(AttribAliases.NAME_POSITION);
         uvWriters = attrs.getWriter(AttribAliases.NAME_UV_0);
         colorWriters = attrs.getWriter(AttribAliases.NAME_COLOR_IN);
@@ -186,8 +184,8 @@ class Trapezoid<T:AttribSet> implements Shape {
             pathSplitted.push(intersections[0]);
         }
 
-        canvas.render(pathSplitted);
-        canvas.setText("" + afterVert);
+        // canvas.render(pathSplitted);
+        // canvas.setText("" + afterVert);
 
         var ep = pathSplittedRaw;
         ep.resize(0);
@@ -226,8 +224,10 @@ class Trapezoid<T:AttribSet> implements Shape {
         cp.setColor(c);
     }
 
+    public var alpha (default, null):Int = 255;
     public function setAlpha(a:Int) {
         cp.setAlpha(a);
+        alpha = a;
     }
 
     public function getVertsCount():Int {
@@ -282,28 +282,28 @@ class SplitInput implements InputSystemTarget<Point> {
     }
 }
 
-class FigureRender2 extends Sprite {
-    var tf = new TextField();
+// class FigureRender2 extends Sprite {
+//     var tf = new TextField();
 
-    public function new() {
-        super();
-        addChild(tf);
-        tf.multiline = true;
-        tf.width = 600;
-    }
+//     public function new() {
+//         super();
+//         addChild(tf);
+//         tf.multiline = true;
+//         tf.width = 600;
+//     }
 
-    public function setText(t) {
-        tf.text = t;
-    }
+//     public function setText(t) {
+//         tf.text = t;
+//     }
 
-    public function render(figures:Array<Vec2D>) {
-        var s = 300;
-        graphics.clear();
-        var path = figures;
-        graphics.lineStyle(1, 0xffffff);
-        graphics.moveTo(100 + s * path[0].x, 100 + s * path[0].y);
-        for (i in 1...path.length)
-            graphics.lineTo(100 + s * path[i].x, 100 + s * path[i].y);
-        graphics.lineTo(100 + s * path[0].x, 100 + s * path[0].y);
-    }
-}
+//     public function render(figures:Array<Vec2D>) {
+//         var s = 300;
+//         graphics.clear();
+//         var path = figures;
+//         graphics.lineStyle(1, 0xffffff);
+//         graphics.moveTo(100 + s * path[0].x, 100 + s * path[0].y);
+//         for (i in 1...path.length)
+//             graphics.lineTo(100 + s * path[i].x, 100 + s * path[i].y);
+//         graphics.lineTo(100 + s * path[0].x, 100 + s * path[0].y);
+//     }
+// }
