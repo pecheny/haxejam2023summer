@@ -29,7 +29,7 @@ class StatusWidget extends Widget {
         var sww = Builder.widget();
         switcher = new WidgetSwitcher(sww);
 
-        label = new Label(Builder.widget(), fui.s("fit"));
+        label = new Label(Builder.widget(), fui.s("center"));
         label.withText("foo");
         score = new Label(Builder.widget(), fui.s("fit"));
         pbw = new ProgressBarWidget(Builder.widget().withLiquidTransform(ar));
