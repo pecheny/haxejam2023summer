@@ -3,7 +3,7 @@ package j2023;
 import j2023.Main.SplitGameState;
 import states.States;
 import utils.MathUtil;
-import j2023.SplittingWidget.CircleWidget;
+import j2023.CircleWidget;
 
 class SplitGameLoop extends StateMachine {
     public var statusGui:StatusWidget;
